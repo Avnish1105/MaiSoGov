@@ -13,7 +13,7 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-pro";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
 async function getCompatibleCollection(
   client,
@@ -75,6 +75,9 @@ export default async function askGeminiWithRAG(question, id, client) {
     }
 
     const context = documents.join("\n\n");
+    console.log(
+      `VECTOR DATABASE DATA:\n${context}\n\nUSER QUESTION:\n${question}`,
+    );
 
     // 3. Generate response using Gemini
     const response = await ai.models.generateContent({
@@ -83,17 +86,13 @@ export default async function askGeminiWithRAG(question, id, client) {
       config: {
         systemInstruction: `You are a personal AI assistant.
 Rules:
-- Use the provided database information.
-- Respond based on database preference.
-- If the information is not present, say: "I don't know your preference please /p and insert preference."
-- Keep the answer based on context.`,
+- Answer based on context if there is somthing releted to it  `,
       },
     });
 
     return {
       success: true,
       reply: response.text,
-      sources: documents,
     };
   } catch (error) {
     console.error("RAG Error:", error);

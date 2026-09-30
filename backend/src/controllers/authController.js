@@ -16,7 +16,7 @@ const generateToken = (user) => {
       name: user.name,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "7d" },
   );
 };
 
@@ -29,7 +29,9 @@ const register = async (req, res) => {
 
     // 1. Validate required fields
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Name, email, and password are required." });
+      return res
+        .status(400)
+        .json({ message: "Name, email, and password are required." });
     }
 
     const trimmedName = name.trim();
@@ -41,18 +43,24 @@ const register = async (req, res) => {
 
     // 2. Validate email format
     if (!isValidEmail(trimmedEmail)) {
-      return res.status(400).json({ message: "Please enter a valid email address." });
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid email address." });
     }
 
     // 3. Validate password
     if (typeof password !== "string" || password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters long." });
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters long." });
     }
 
     // 4. Prevent duplicate email registration
     const existingUser = await User.findOne({ email: trimmedEmail });
     if (existingUser) {
-      return res.status(400).json({ message: "User with this email already exists." });
+      return res
+        .status(400)
+        .json({ message: "User with this email already exists." });
     }
 
     // 5. Hash password
@@ -69,9 +77,14 @@ const register = async (req, res) => {
     // 7. Generate JWT containing ONLY { id, name }
     const token = generateToken(user);
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, // true in production with HTTPS
+      sameSite: "lax",
+    });
+
     return res.status(201).json({
       message: "User registered successfully",
-      token,
       user: {
         id: user._id.toString(),
         name: user.name,
@@ -79,7 +92,9 @@ const register = async (req, res) => {
     });
   } catch (error) {
     console.error("Register Error:", error);
-    return res.status(500).json({ message: "Server error during registration." });
+    return res
+      .status(500)
+      .json({ message: "Server error during registration." });
   }
 };
 
@@ -92,7 +107,9 @@ const login = async (req, res) => {
 
     // 1. Validate required fields
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required." });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required." });
     }
 
     const trimmedEmail = email.trim().toLowerCase();
@@ -112,9 +129,14 @@ const login = async (req, res) => {
     // 4. Generate JWT containing ONLY { id, name }
     const token = generateToken(user);
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, // true in production with HTTPS
+      sameSite: "lax",
+    });
+
     return res.status(200).json({
       message: "Login successful",
-      token,
       user: {
         id: user._id.toString(),
         name: user.name,
@@ -144,12 +166,25 @@ const getMe = async (req, res) => {
     });
   } catch (error) {
     console.error("GetMe Error:", error);
-    return res.status(500).json({ message: "Server error retrieving user data." });
+    return res
+      .status(500)
+      .json({ message: "Server error retrieving user data." });
   }
+};
+
+const logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  });
+
+  return res.status(200).json({ message: "Logout successful" });
 };
 
 module.exports = {
   register,
   login,
   getMe,
+  logout,
 };
