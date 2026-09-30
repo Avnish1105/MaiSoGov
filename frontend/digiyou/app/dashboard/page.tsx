@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
+import Questioner from "../component/Questioner";
 
 interface Message {
   id: string;
@@ -24,6 +25,7 @@ const createMessageId = (sender: Message["sender"]) =>
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
+  const [showQuestioner, setShowQuestioner] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "initial-ai-msg",
@@ -183,6 +185,10 @@ export default function DashboardPage() {
         </div>
       </div>
     );
+  }
+
+  if (showQuestioner) {
+    return <Questioner onComplete={() => setShowQuestioner(false)} />;
   }
 
   return (

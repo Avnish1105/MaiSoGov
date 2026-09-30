@@ -6,17 +6,57 @@ import { useRouter } from "next/navigation";
 const questions = [
   {
     id: 1,
-    question: "What do i prefer to do in the morning?",
-    options: ["Study", "Exercise", "Sleep", "Watch TV"],
+    question: "What is your height?",
+    options: ["Below 5 ft", "5–5.5 ft", "5.5–6 ft", "Above 6 ft"],
   },
   {
     id: 2,
-    question: "How do i prefer to learn?",
-    options: ["Videos", "Books", "Practice", "Lectures"],
+    question: "What is your weight?",
+    options: ["Below 50 kg", "50–65 kg", "65–80 kg", "Above 80 kg"],
   },
   {
     id: 3,
-    question: "What do i usually do when im are stressed?",
+    question: "What is your usual activity level?",
+    options: [
+      "Mostly inactive",
+      "Lightly active",
+      "Moderately active",
+      "Very active",
+    ],
+  },
+  {
+    id: 4,
+    question: "How many hours do you usually sleep?",
+    options: [
+      "Less than 5 hours",
+      "5–7 hours",
+      "7–9 hours",
+      "More than 9 hours",
+    ],
+  },
+  {
+    id: 5,
+    question: "What time do you usually wake up?",
+    options: ["Before 6 AM", "6–8 AM", "8–10 AM", "After 10 AM"],
+  },
+  {
+    id: 6,
+    question: "How often do you exercise?",
+    options: ["Never", "1–2 days a week", "3–5 days a week", "Every day"],
+  },
+  {
+    id: 7,
+    question: "How do you usually spend your free time?",
+    options: ["Gaming", "Watching videos", "Reading/learning", "Going out"],
+  },
+  {
+    id: 8,
+    question: "What is your preferred way of learning?",
+    options: ["Videos", "Books", "Practice", "Lectures"],
+  },
+  {
+    id: 9,
+    question: "What do you usually do when you are stressed?",
     options: [
       "Take a break",
       "Listen to music",
@@ -25,13 +65,33 @@ const questions = [
     ],
   },
   {
-    id: 4,
-    question: "Which environment helps me focus?",
+    id: 10,
+    question: "Which environment helps you focus?",
     options: [
       "Complete silence",
       "Music",
       "People around me",
       "It doesn't matter",
+    ],
+  },
+  {
+    id: 11,
+    question: "How do you prefer to make decisions?",
+    options: [
+      "Think carefully",
+      "Ask someone",
+      "Go with my instincts",
+      "Compare all options",
+    ],
+  },
+  {
+    id: 12,
+    question: "What is your main goal right now?",
+    options: [
+      "Improve academics",
+      "Improve fitness",
+      "Build my career",
+      "Improve personal life",
     ],
   },
 ];
