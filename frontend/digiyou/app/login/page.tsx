@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,7 +48,9 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Login failed. Please check your credentials.");
+        throw new Error(
+          data.message || "Login failed. Please check your credentials.",
+        );
       }
 
       // Successful login

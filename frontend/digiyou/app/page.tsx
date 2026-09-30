@@ -20,28 +20,27 @@ export default function Home() {
         />
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left my-8">
           <h1 className="max-w-md text-3xl font-bold leading-tight tracking-tight text-black dark:text-zinc-50">
-            Welcome to DigiYou Authentication Portal
+            Welcome to HumanTwin AI
           </h1>
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Secure Email & Password Authentication system powered by Express,
-            MongoDB, and Next.js.
+            Your personal AI for decisions, goals, and everyday planning.
           </p>
 
           {!loading && (
             <div className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
               {user ? (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <span>✓</span> Logged in as {user.name}
                   </p>
-                  <p className="text-xs text-zinc-500 font-mono">
-                    User ID: {user.id}
+                  <p className="text-xs text-zinc-500">
+                    Your HumanTwin AI assistant is ready.
                   </p>
                 </div>
               ) : (
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  You are currently not signed in. Use the buttons below to sign
-                  in or register.
+                  You are currently not signed in. Sign in or create an account
+                  to talk with your HumanTwin.
                 </p>
               )}
             </div>
@@ -54,7 +53,7 @@ export default function Home() {
               className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-zinc-900 px-6 text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-black dark:hover:bg-zinc-200 sm:w-auto font-semibold"
               href="/dashboard"
             >
-              Go to Dashboard &rarr;
+              Open Twin Chat &rarr;
             </Link>
           ) : (
             <>

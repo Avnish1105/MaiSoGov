@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const { default: Airouter } = require("./routes/aiRoutes");
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +24,8 @@ app.use("/api/auth", authRoutes);
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });
 });
+
+app.use("/ai", Airouter);
 
 const PORT = process.env.PORT || 5000;
 
