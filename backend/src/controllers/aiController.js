@@ -1,16 +1,13 @@
 import "dotenv/config";
 import { CloudClient } from "chromadb";
-import { GoogleGeminiEmbeddingFunction } from "@chroma-core/google-gemini";
 import { GoogleGenAI } from "@google/genai";
-import askGeminiWithRAG from "../Gemini/gemini.js";
+import { chromaEmbedder } from "../config/chromaEmbedder.js";
+import askGeminiWithRAG, {
+  generatePreferenceQuestion,
+} from "../Gemini/gemini.js";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
-});
-
-const embedder = new GoogleGeminiEmbeddingFunction({
-  apiKey: process.env.GEMINI_API_KEY,
-  modelName: "gemini-embedding-001",
 });
 
 const client = new CloudClient({
@@ -24,30 +21,12 @@ const COLLECTION_NAME = "christ_uni_docs";
 async function getCompatibleCollection() {
   return client.getOrCreateCollection({
     name: COLLECTION_NAME,
-    embeddingFunction: embedder,
+    embeddingFunction: chromaEmbedder,
   });
 }
 
-async function withCollectionReset(operation) {
-  let collection = await getCompatibleCollection();
-
-  try {
-    return await operation(collection);
-  } catch (error) {
-    const message = error?.message || "";
-
-    if (!/dimension|expecting embedding/i.test(message)) {
-      throw error;
-    }
-
-    console.warn(
-      `Resetting Chroma collection "${COLLECTION_NAME}" because the stored embedding dimension no longer matches the Gemini embedder.`,
-    );
-
-    await client.deleteCollection({ name: COLLECTION_NAME }).catch(() => {});
-    collection = await getCompatibleCollection();
-    return await operation(collection);
-  }
+async function withCompatibleCollection(operation) {
+  return operation(await getCompatibleCollection());
 }
 
 export const sendMessage = async (req, res) => {
@@ -65,28 +44,42 @@ export const sendMessage = async (req, res) => {
 
     if (message.startsWith("/p ")) {
       const cleanPreference = message.replace("/p ", "").trim();
-      const docId = `pref_${userId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      if (!cleanPreference) {
+        return res.status(400).json({
+          error: "Please provide a preference after '/p'.",
+        });
+      }
+
+      const question = await generatePreferenceQuestion(cleanPreference);
+      const answer = cleanPreference;
+      const document = `Question: ${question}\nAnswer: ${answer}`;
+      const docId = `${userId}-preference-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const prefMetadata = {
         ...(metadata || {}),
+        userId: String(userId),
+        type: "preference",
+        questionId: String(docId),
         source: "manual",
         category: "Preferences",
-        userId,
+        question,
+        answer,
       };
 
       const collection = await client.getOrCreateCollection({
         name: COLLECTION_NAME,
-        embeddingFunction: embedder,
+        embeddingFunction: chromaEmbedder,
       });
 
       await collection.add({
         ids: [docId],
-        documents: [cleanPreference],
+        documents: [document],
         metadatas: [prefMetadata],
       });
 
       return res.json({
         success: true,
-        reply: "Your Preference was stored Successfully ",
+        reply: `Preference saved. Question: ${question}`,
+        question,
         sources: message,
       });
     }
@@ -116,7 +109,7 @@ export const getUserDocuments = async (req, res) => {
         .json({ message: "You can only access your own data." });
     }
 
-    const result = await withCollectionReset((collection) =>
+    const result = await withCompatibleCollection((collection) =>
       collection.get({ where: { userId } }),
     );
 
@@ -137,7 +130,7 @@ export const searchDocuments = async (req, res) => {
     }
 
     const { queryText, limit } = req.body;
-    const results = await withCollectionReset((collection) =>
+    const results = await withCompatibleCollection((collection) =>
       collection.query({
         queryTexts: [queryText],
         nResults: limit || 3,
