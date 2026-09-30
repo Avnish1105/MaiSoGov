@@ -5,7 +5,7 @@ import { GoogleGeminiEmbeddingFunction } from "@chroma-core/google-gemini";
 // Initialize the embedder once
 const embedder = new GoogleGeminiEmbeddingFunction({
   apiKey: process.env.GEMINI_API_KEY,
-  modelName: "gemini-embedding-001",
+  modelName: "gemini-embedding-2",
 });
 
 // Initialize the SDK client instance
@@ -13,22 +13,56 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-pro";
+
+async function getCompatibleCollection(
+  client,
+  collectionName = "christ_uni_docs",
+) {
+  return client.getOrCreateCollection({
+    name: collectionName,
+    embeddingFunction: embedder,
+  });
+}
+
+async function withCollectionReset(
+  client,
+  operation,
+  collectionName = "christ_uni_docs",
+) {
+  let collection = await getCompatibleCollection(client, collectionName);
+
+  try {
+    return await operation(collection);
+  } catch (error) {
+    const message = error?.message || "";
+
+    if (!/dimension|expecting embedding/i.test(message)) {
+      throw error;
+    }
+
+    console.warn(
+      `Resetting Chroma collection "${collectionName}" because the stored embedding dimension no longer matches the Gemini embedder.`,
+    );
+
+    await client.deleteCollection({ name: collectionName }).catch(() => {});
+    collection = await getCompatibleCollection(client, collectionName);
+    return await operation(collection);
+  }
+}
+
 export default async function askGeminiWithRAG(question, id, client) {
   try {
     // 1. Get collection with the embedding function attached
-    const collection = await client.getOrCreateCollection({
-      name: "christ_uni_docs",
-      embeddingFunction: embedder, // Chroma will handle text -> vector conversion
-    });
-
-    // 2. Query directly with text! Chroma auto-embeds 'question' using 'embedder'
-    const results = await collection.query({
-      queryTexts: [question],
-      nResults: 5,
-      where: {
-        userId: id,
-      },
-    });
+    const results = await withCollectionReset(client, async (collection) =>
+      collection.query({
+        queryTexts: [question],
+        nResults: 5,
+        where: {
+          userId: id,
+        },
+      }),
+    );
 
     const documents = results.documents[0] || [];
 
@@ -44,7 +78,7 @@ export default async function askGeminiWithRAG(question, id, client) {
 
     // 3. Generate response using Gemini
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: GEMINI_MODEL,
       contents: `VECTOR DATABASE DATA:\n${context}\n\nUSER QUESTION:\n${question}`,
       config: {
         systemInstruction: `You are a personal AI assistant.

@@ -39,33 +39,41 @@ Airouter.post("/message", async (req, res) => {
 
     message = message.trim();
 
-    // Attach Gemini Embedding Function so Chroma embeds using 3072 dims
-    const collection = await client.getOrCreateCollection({
-      name: COLLECTION_NAME,
-      embeddingFunction: embedder,
-    });
-
-    // If message starts with /p, store it in Chroma as a preference document
+    // If message starts with /p, append it as a preference document
     if (message.startsWith("/p ")) {
       const cleanPreference = message.replace("/p ", "").trim();
 
-      metadata = {
+      // Create a unique document ID for this entry to prevent overwrites
+      const docId = `pref_${id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+      const prefMetadata = {
+        ...(metadata || {}),
         source: "manual",
         category: "Preferences",
         userId: id,
       };
 
-      // Generate a unique Document ID so users can store multiple preferences
-      const docId = `${id}_pref_${Date.now()}`;
+      // Get or create collection with the attached embedding function
+      const collection = await client.getOrCreateCollection({
+        name: COLLECTION_NAME,
+        embeddingFunction: embedder,
+      });
 
+      // Append new document to ChromaDB
       await collection.add({
         ids: [docId],
         documents: [cleanPreference],
-        metadatas: [metadata],
+        metadatas: [prefMetadata],
       });
+      res.json({
+        success: true,
+        reply: "Your Preference was stored Successfully ",
+        sources: message,
+      });
+      return;
     }
 
-    // Call RAG helper with updated signature (passing both client and ai instance)
+    // Call RAG helper to query across all stored preferences for this user
     const result = await askGeminiWithRAG(message, id, client, ai);
     res.json(result);
   } catch (error) {
@@ -81,14 +89,13 @@ Airouter.post("/message", async (req, res) => {
 Airouter.get("/get/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const collection = await client.getOrCreateCollection({
-      name: COLLECTION_NAME,
-      embeddingFunction: embedder,
-    });
+    const collection = await getCompatibleCollection();
 
-    const result = await collection.get({
-      where: { userId: id },
-    });
+    const result = await withCollectionReset(async (currentCollection) =>
+      currentCollection.get({
+        where: { userId: id },
+      }),
+    );
 
     res.json({ success: true, data: result });
   } catch (error) {
@@ -100,15 +107,14 @@ Airouter.get("/get/:id", async (req, res) => {
 Airouter.post("/search", async (req, res) => {
   try {
     const { queryText, limit } = req.body;
-    const collection = await client.getOrCreateCollection({
-      name: COLLECTION_NAME,
-      embeddingFunction: embedder,
-    });
+    const collection = await getCompatibleCollection();
 
-    const results = await collection.query({
-      queryTexts: [queryText],
-      nResults: limit || 3,
-    });
+    const results = await withCollectionReset(async (currentCollection) =>
+      currentCollection.query({
+        queryTexts: [queryText],
+        nResults: limit || 3,
+      }),
+    );
 
     res.json({ success: true, results });
   } catch (error) {
