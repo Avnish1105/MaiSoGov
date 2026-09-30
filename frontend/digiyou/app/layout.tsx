@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DigiYou - Authentication System",
-  description: "Full Email + Password Authentication system",
+  title: "HumanTwin AI - Your Personal Digital Twin",
+  description: "Personal AI for decisions, goals, and everyday planning.",
 };
 
 export default function RootLayout({
