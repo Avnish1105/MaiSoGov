@@ -12,7 +12,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
   // If already logged in, redirect to dashboard
   if (user) {
-    router.push("/dashboard");
+    router.push("/Quiz");
   }
 
   const validateEmail = (emailStr: string) => {
@@ -71,6 +71,7 @@ export default function RegisterPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
@@ -81,14 +82,18 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Registration failed. Please try again.");
+        throw new Error(
+          data.message || "Registration failed. Please try again.",
+        );
       }
 
       // Successful registration
-      register(data.token, data.user);
+      register(data.user);
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred.",
+      );
     } finally {
       setSubmitting(false);
     }

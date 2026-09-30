@@ -39,6 +39,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           email: email.trim(),
           password,
@@ -54,10 +55,12 @@ export default function LoginPage() {
       }
 
       // Successful login
-      login(data.token, data.user);
+      login(data.user);
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -120,7 +123,7 @@ export default function LoginPage() {
         </form>
 
         <div className="text-center text-sm text-zinc-500 dark:text-zinc-400">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             href="/register"
             className="font-semibold text-zinc-900 hover:underline dark:text-zinc-100"

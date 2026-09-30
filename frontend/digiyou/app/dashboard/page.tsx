@@ -19,6 +19,9 @@ const STARTER_SUGGESTIONS = [
   "What if I skip studying today?",
 ];
 
+const createMessageId = (sender: Message["sender"]) =>
+  `${sender}-${crypto.randomUUID()}`;
+
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
@@ -49,7 +52,7 @@ export default function DashboardPage() {
     if (!messageText || isThinking) return;
 
     const userMessage: Message = {
-      id: `user-${Date.now()}`,
+      id: createMessageId("user"),
       sender: "user",
       text: messageText,
       timestamp: new Date().toLocaleTimeString([], {
@@ -67,15 +70,16 @@ export default function DashboardPage() {
     setIsThinking(true);
 
     try {
-      const response = await fetch("http://localhost:5000/ai/message", {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      const backendUrl = apiUrl.replace(/\/api\/?$/, "");
+      const response = await fetch(`${backendUrl}/ai/message`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          id: user?.id,
-          message: messageText,
-        }),
+        credentials: "include",
+        body: JSON.stringify({ message: messageText }),
       });
 
       const data = await response.json();
@@ -87,7 +91,7 @@ export default function DashboardPage() {
       }
 
       const aiMessage: Message = {
-        id: `ai-${Date.now()}`,
+        id: createMessageId("ai"),
         sender: "ai",
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], {
@@ -102,7 +106,7 @@ export default function DashboardPage() {
       console.error("Chat error:", error);
 
       const errorMessage: Message = {
-        id: `ai-${Date.now()}`,
+        id: createMessageId("ai"),
         sender: "ai",
         text: "Sorry, I couldn't connect to the HumanTwin.",
         timestamp: new Date().toLocaleTimeString([], {

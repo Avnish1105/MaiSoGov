@@ -9,10 +9,9 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
-  login: (token: string, user: User) => void;
-  register: (token: string, user: User) => void;
+  login: (user: User) => void;
+  register: (user: User) => void;
   logout: () => void;
   refetchUser: () => Promise<void>;
 }
@@ -21,80 +20,73 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+async function getCurrentUser(): Promise<User | null> {
+  try {
+    const res = await fetch(`${API_URL}/auth/me`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json();
+    return { id: data.id, name: data.name };
+  } catch (err) {
+    console.error("Failed to verify session:", err);
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchUser = async (authToken: string) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/me`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setUser({ id: data.id, name: data.name });
-        setToken(authToken);
-      } else {
-        // Token is invalid or expired
-        localStorage.removeItem("token");
-        setToken(null);
-        setUser(null);
-      }
-    } catch (err) {
-      console.error("Failed to verify token:", err);
-      localStorage.removeItem("token");
-      setToken(null);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      fetchUser(storedToken);
-    } else {
-      setLoading(false);
-    }
+    let active = true;
+
+    const restoreSession = async () => {
+      const currentUser = await getCurrentUser();
+      if (active) {
+        setUser(currentUser);
+        setLoading(false);
+      }
+    };
+
+    void restoreSession();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
+  const login = (newUser: User) => {
     setUser(newUser);
+    setLoading(false);
   };
 
-  const register = (newToken: string, newUser: User) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
+  const register = (newUser: User) => {
     setUser(newUser);
+    setLoading(false);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
+    void fetch(`${API_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    }).catch((err) => console.error("Failed to end session:", err));
     setUser(null);
   };
 
   const refetchUser = async () => {
-    const currentToken = token || localStorage.getItem("token");
-    if (currentToken) {
-      await fetchUser(currentToken);
-    }
+    setUser(await getCurrentUser());
+    setLoading(false);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
         loading,
         login,
         register,
