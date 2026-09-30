@@ -14,6 +14,9 @@ const ai = new GoogleGenAI({
 });
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const RETRIEVAL_LIMIT = 3;
+const MAX_DOCUMENT_CHARS = 2000;
+const MAX_CONTEXT_CHARS = 6000;
 
 async function getCompatibleCollection(
   client,
@@ -57,14 +60,16 @@ export default async function askGeminiWithRAG(question, id, client) {
     const results = await withCollectionReset(client, async (collection) =>
       collection.query({
         queryTexts: [question],
-        nResults: 5,
+        nResults: RETRIEVAL_LIMIT,
         where: {
           userId: id,
         },
       }),
     );
 
-    const documents = results.documents[0] || [];
+    const documents = (results.documents[0] || [])
+      .filter((document) => typeof document === "string" && document.trim())
+      .map((document) => document.trim().slice(0, MAX_DOCUMENT_CHARS));
 
     if (documents.length === 0) {
       return {
@@ -74,10 +79,7 @@ export default async function askGeminiWithRAG(question, id, client) {
       };
     }
 
-    const context = documents.join("\n\n");
-    console.log(
-      `VECTOR DATABASE DATA:\n${context}\n\nUSER QUESTION:\n${question}`,
-    );
+    const context = documents.join("\n\n").slice(0, MAX_CONTEXT_CHARS);
 
     // 3. Generate response using Gemini
     const response = await ai.models.generateContent({
