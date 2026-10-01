@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://maisogov.onrender.com";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -66,7 +67,7 @@ export default function RegisterPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
