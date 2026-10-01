@@ -18,11 +18,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "https://maisogov.onrender.com"
+).replace(/\/$/, "");
 
 async function getCurrentUser(): Promise<User | null> {
   try {
-    const res = await fetch(`${API_URL}/auth/me`, {
+    const res = await fetch(`${API_URL}/api/auth/me`, {
       method: "GET",
       credentials: "include",
     });
@@ -71,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = () => {
-    void fetch(`${API_URL}/auth/logout`, {
+    void fetch(`${API_URL}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
     }).catch((err) => console.error("Failed to end session:", err));
