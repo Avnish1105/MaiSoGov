@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://maisogov.onrender.com";
 const questions = [
   {
     id: 1,
@@ -142,7 +143,7 @@ export default function QuizPage() {
     try {
       setSubmitting(true);
 
-      const response = await fetch("http://localhost:5000/quiz/post", {
+      const response = await fetch(`${API_URL}/quiz/post`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

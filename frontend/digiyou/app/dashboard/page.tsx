@@ -72,10 +72,10 @@ export default function DashboardPage() {
     setIsThinking(true);
 
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-      const backendUrl = apiUrl.replace(/\/api\/?$/, "");
-      const response = await fetch(`${backendUrl}/ai/message`, {
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "https://maisogov.onrender.com";
+
+      const response = await fetch(`${API_URL}/ai/message`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
