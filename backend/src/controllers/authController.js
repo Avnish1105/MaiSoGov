@@ -20,6 +20,16 @@ const generateToken = (user) => {
   );
 };
 
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  };
+};
+
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
@@ -77,11 +87,7 @@ const register = async (req, res) => {
     // 7. Generate JWT containing ONLY { id, name }
     const token = generateToken(user);
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false, // true in production with HTTPS
-      sameSite: "lax",
-    });
+    res.cookie("token", token, getCookieOptions());
 
     return res.status(201).json({
       message: "User registered successfully",
@@ -129,11 +135,7 @@ const login = async (req, res) => {
     // 4. Generate JWT containing ONLY { id, name }
     const token = generateToken(user);
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false, // true in production with HTTPS
-      sameSite: "lax",
-    });
+    res.cookie("token", token, getCookieOptions());
 
     return res.status(200).json({
       message: "Login successful",
@@ -173,11 +175,7 @@ const getMe = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-  });
+  res.clearCookie("token", getCookieOptions());
 
   return res.status(200).json({ message: "Logout successful" });
 };

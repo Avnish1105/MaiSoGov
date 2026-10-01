@@ -15,16 +15,15 @@ dotenv.config();
 connectDB();
 
 const app = express();
-
+const corsMiddleware = cors({
+  origin: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+});
 // Middlewares
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  }),
-);
+app.use(corsMiddleware);
+
 app.use(express.json());
 
 // Routes
